@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IT Assistant – Trợ lý Công nghệ Thông tin</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Sora:wght@300;400;600;700&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --panel: #0f1525;
+    --surface: #151d30;
+    --border: #1e2d4a;
+    --accent: #00d4ff;
+    --accent2: #7b61ff;
+    --green: #00ff88;
+    --red: #ff4d6d;
+    --text: #e2eaf5;
+    --muted: #5a7090;
+    --user-bubble: #1a2a4a;
+    --bot-bubble: #0f1d35;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Sora', sans-serif;
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* === HEADER === */
+  header {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-shrink: 0;
+    position: relative;
+  }
+
+  .logo {
+    width: 42px; height: 42px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    box-shadow: 0 0 20px rgba(0,212,255,0.3);
+    flex-shrink: 0;
+  }
+
+  .header-info h1 {
+    font-size: 15px; font-weight: 700;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    letter-spacing: 0.3px;
+  }
+  .header-info p { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s infinite;
+    margin-right: 5px;
+    display: inline-block;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .clear-btn {
+    margin-left: auto;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'Sora', sans-serif;
+    transition: all 0.2s;
+  }
+  .clear-btn:hover { border-color: var(--red); color: var(--red); }
+
+  /* === QUICK TOPICS === */
+  .topics-bar {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    flex-shrink: 0;
+    scrollbar-width: none;
+  }
+  .topics-bar::-webkit-scrollbar { display: none; }
+
+  .topic-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 11px;
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+    font-family: 'Sora', sans-serif;
+  }
+  .topic-chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,212,255,0.07);
+  }
+
+  /* === CHAT AREA === */
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  #chat::-webkit-scrollbar { width: 4px; }
+  #chat::-webkit-scrollbar-track { background: transparent; }
+  #chat::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+  /* === MESSAGES === */
+  .msg { display: flex; gap: 10px; animation: fadeUp 0.3s ease; max-width: 100%; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+
+  .msg.user { flex-direction: row-reverse; }
+
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+  .bot .avatar { background: linear-gradient(135deg, var(--accent), var(--accent2)); }
+  .user .avatar { background: var(--user-bubble); border: 1px solid var(--border); }
+
+  .bubble {
+    max-width: calc(100% - 52px);
+    padding: 12px 15px;
+    border-radius: 12px;
+    font-size: 13.5px;
+    line-height: 1.65;
+    word-break: break-word;
+  }
+  .bot .bubble {
+    background: var(--bot-bubble);
+    border: 1px solid var(--border);
+    border-top-left-radius: 3px;
+  }
+  .user .bubble {
+    background: var(--user-bubble);
+    border: 1px solid rgba(0,212,255,0.2);
+    border-top-right-radius: 3px;
+    text-align: right;
+  }
+
+  .bubble code {
+    font-family: 'JetBrains Mono', monospace;
+    background: rgba(0,212,255,0.08);
+    border: 1px solid rgba(0,212,255,0.15);
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--accent);
+  }
+  .bubble pre {
+    background: #060b14;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 10px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #a8d8ea;
+  }
+  .bubble pre code { background: none; border: none; padding: 0; color: inherit; }
+
+  .bubble strong { color: var(--accent); font-weight: 600; }
+  .bubble em { color: var(--muted); }
+  .bubble ul, .bubble ol { padding-left: 18px; margin-top: 6px; }
+  .bubble li { margin-bottom: 4px; }
+  .bubble a { color: var(--accent); text-decoration: none; }
+  .bubble a:hover { text-decoration: underline; }
+
+  .timestamp {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 4px;
+    padding: 0 4px;
+  }
+  .msg.user .timestamp { text-align: right; }
+
+  /* === TYPING INDICATOR === */
+  .typing-dots {
+    display: flex; gap: 4px; align-items: center;
+    padding: 4px 0;
+  }
+  .typing-dots span {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: blink 1.2s infinite;
+    opacity: 0.4;
+  }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes blink { 0%,100%{opacity:0.2;transform:scale(0.8)} 50%{opacity:1;transform:scale(1)} }
+
+  /* === INPUT AREA === */
+  .input-area {
+    background: var(--panel);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+    flex-shrink: 0;
+  }
+
+  .input-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-end;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 14px;
+    transition: border-color 0.2s;
+  }
+  .input-row:focus-within { border-color: rgba(0,212,255,0.4); }
+
+  #userInput {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-family: 'Sora', sans-serif;
+    font-size: 13.5px;
+    resize: none;
+    max-height: 120px;
+    line-height: 1.5;
+    scrollbar-width: thin;
+  }
+  #userInput::placeholder { color: var(--muted); }
+
+  #sendBtn {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 8px;
+    width: 36px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: opacity 0.2s, transform 0.1s;
+    color: #fff;
+    font-size: 16px;
+  }
+  #sendBtn:hover { opacity: 0.85; transform: scale(1.05); }
+  #sendBtn:active { transform: scale(0.95); }
+  #sendBtn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+  .input-hint {
+    font-size: 10px;
+    color: var(--muted);
+    margin-top: 6px;
+    text-align: center;
+  }
+
+  /* === WELCOME SCREEN === */
+  .welcome {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 30px 20px;
+    gap: 12px;
+    flex: 1;
+  }
+  .welcome-icon {
+    font-size: 48px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .welcome h2 {
+    font-size: 20px; font-weight: 700;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .welcome p { font-size: 13px; color: var(--muted); max-width: 280px; line-height: 1.6; }
+
+  .welcome-chips {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    justify-content: center; margin-top: 8px;
+  }
+  .welcome-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 12px;
+    color: var(--text);
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+  }
+  .welcome-chip:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: rgba(0,212,255,0.05);
+  }
+  .welcome-chip span { display: block; font-size: 10px; color: var(--muted); margin-top: 2px; }
+
+  /* Token counter */
+  .token-info {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 10px; color: var(--muted);
+    margin-top: 6px; justify-content: flex-end;
+  }
+  .token-dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">🤖</div>
+  <div class="header-info">
+    <h1>IT Assistant Pro</h1>
+    <p><span class="status-dot"></span>Trực tuyến · Powered by Claude AI</p>
+  </div>
+  <button class="clear-btn" onclick="clearChat()">🗑 Xóa chat</button>
+</header>
+
+<!-- QUICK TOPICS -->
+<div class="topics-bar">
+  <button class="topic-chip" onclick="sendQuick('Mạng máy tính & TCP/IP')">🌐 Mạng & TCP/IP</button>
+  <button class="topic-chip" onclick="sendQuick('An toàn thông tin & bảo mật')">🔒 Bảo mật</button>
+  <button class="topic-chip" onclick="sendQuick('Lập trình & thuật toán')">💻 Lập trình</button>
+  <button class="topic-chip" onclick="sendQuick('Hệ điều hành Linux & Windows')">🖥 Hệ điều hành</button>
+  <button class="topic-chip" onclick="sendQuick('Cơ sở dữ liệu SQL & NoSQL')">🗄 Database</button>
+  <button class="topic-chip" onclick="sendQuick('Cloud computing & DevOps')">☁️ Cloud & DevOps</button>
+  <button class="topic-chip" onclick="sendQuick('Viễn thông & cáp quang')">📡 Viễn thông</button>
+  <button class="topic-chip" onclick="sendQuick('Xử lý sự cố máy tính')">🔧 Troubleshoot</button>
+</div>
+
+<!-- CHAT -->
+<div id="chat">
+  <div class="welcome" id="welcome">
+    <div class="welcome-icon">⚡</div>
+    <h2>Chào mừng, Vĩnh!</h2>
+    <p>Trợ lý IT chuyên nghiệp – hỏi bất kỳ điều gì về công nghệ thông tin, mạng, bảo mật, lập trình...</p>
+    <div class="welcome-chips">
+      <div class="welcome-chip" onclick="sendQuick('Giải thích OSI model 7 lớp cho tôi')">
+        🌐 OSI Model
+        <span>Giải thích 7 lớp mạng</span>
+      </div>
+      <div class="welcome-chip" onclick="sendQuick('Các lệnh Linux phổ biến nhất cần biết')">
+        🐧 Linux commands
+        <span>Các lệnh cơ bản & nâng cao</span>
+      </div>
+      <div class="welcome-chip" onclick="sendQuick('Cách bảo mật hệ thống mạng doanh nghiệp')">
+        🔐 Network Security
+        <span>Bảo mật mạng doanh nghiệp</span>
+      </div>
+      <div class="welcome-chip" onclick="sendQuick('Cáp quang hoạt động như thế nào?')">
+        📡 Cáp quang
+        <span>Nguyên lý hoạt động</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INPUT -->
+<div class="input-area">
+  <div class="input-row">
+    <textarea id="userInput" placeholder="Hỏi về mạng, bảo mật, lập trình, hệ thống..." rows="1"
+      onkeydown="handleKey(event)" oninput="autoResize(this)"></textarea>
+    <button id="sendBtn" onclick="sendMessage()">➤</button>
+  </div>
+  <div class="input-hint">Enter để gửi · Shift+Enter xuống dòng · Powered by Claude claude-sonnet-4-20250514</div>
+</div>
+
+<script>
+const SYSTEM_PROMPT = `Bạn là IT Assistant Pro – trợ lý chuyên gia công nghệ thông tin cao cấp cho kỹ sư Võ Tiến Vĩnh, người làm việc trong lĩnh vực viễn thông và hạ tầng mạng tại Việt Nam.
+
+Phong cách trả lời:
+- Trả lời bằng tiếng Việt, chuyên nghiệp nhưng thân thiện
+- Dùng thuật ngữ kỹ thuật chính xác, có giải thích khi cần
+- Trả lời ngắn gọn, đúng trọng tâm – không lan man
+- Dùng format markdown: **in đậm** cho từ khóa quan trọng, \`code\` cho lệnh/code, danh sách có số thứ tự/gạch đầu dòng
+- Khi có code/lệnh, đặt trong block \`\`\`
+
+Chuyên môn ưu tiên:
+- Mạng máy tính: TCP/IP, routing, switching, VLAN, OSPF, BGP
+- Viễn thông: cáp quang, DWDM, SDH/SONET, MPLS, OTN
+- Bảo mật: firewall, VPN, IDS/IPS, mã hóa, penetration testing
+- Hệ điều hành: Linux (Ubuntu, CentOS, RHEL), Windows Server
+- Lập trình: Python, Bash, SQL, JavaScript
+- Cloud & DevOps: Docker, Kubernetes, AWS, CI/CD
+- Cơ sở dữ liệu: MySQL, PostgreSQL, MongoDB
+- Xử lý sự cố: network troubleshooting, log analysis
+
+Khi trả lời:
+1. Đi thẳng vào vấn đề
+2. Nếu có nhiều cách giải quyết, liệt kê và đề xuất cách tốt nhất
+3. Cung cấp ví dụ thực tế khi có thể
+4. Nếu câu hỏi liên quan đến vấn đề bảo mật/rủi ro, cảnh báo rõ ràng`;
+
+let messages = [];
+let isLoading = false;
+
+function getTime() {
+  return new Date().toLocaleTimeString('vi-VN', {hour:'2-digit', minute:'2-digit'});
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function clearChat() {
+  if (messages.length === 0) return;
+  if (!confirm('Xóa toàn bộ lịch sử chat?')) return;
+  messages = [];
+  document.getElementById('chat').innerHTML = `
+    <div class="welcome" id="welcome">
+      <div class="welcome-icon">⚡</div>
+      <h2>Chào mừng, Vĩnh!</h2>
+      <p>Trợ lý IT chuyên nghiệp – hỏi bất kỳ điều gì về công nghệ thông tin, mạng, bảo mật, lập trình...</p>
+      <div class="welcome-chips">
+        <div class="welcome-chip" onclick="sendQuick('Giải thích OSI model 7 lớp cho tôi')">🌐 OSI Model<span>Giải thích 7 lớp mạng</span></div>
+        <div class="welcome-chip" onclick="sendQuick('Các lệnh Linux phổ biến nhất cần biết')">🐧 Linux commands<span>Các lệnh cơ bản & nâng cao</span></div>
+        <div class="welcome-chip" onclick="sendQuick('Cách bảo mật hệ thống mạng doanh nghiệp')">🔐 Network Security<span>Bảo mật mạng doanh nghiệp</span></div>
+        <div class="welcome-chip" onclick="sendQuick('Cáp quang hoạt động như thế nào?')">📡 Cáp quang<span>Nguyên lý hoạt động</span></div>
+      </div>
+    </div>`;
+}
+
+function sendQuick(text) {
+  document.getElementById('userInput').value = text;
+  sendMessage();
+}
+
+function appendMsg(role, content) {
+  const welcome = document.getElementById('welcome');
+  if (welcome) welcome.remove();
+
+  const chat = document.getElementById('chat');
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `
+    <div class="avatar">${role === 'bot' ? '🤖' : '👤'}</div>
+    <div>
+      <div class="bubble" id="bubble-${Date.now()}">${content}</div>
+      <div class="timestamp">${getTime()}</div>
+    </div>`;
+  chat.appendChild(div);
+  chat.scrollTop = chat.scrollHeight;
+  return div.querySelector('.bubble');
+}
+
+function formatResponse(text) {
+  // Code blocks
+  text = text.replace(/```(\w*)\n?([\s\S]*?)```/g, (_, lang, code) =>
+    `<pre><code>${escapeHtml(code.trim())}</code></pre>`);
+  // Inline code
+  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Bold
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  // Italic
+  text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  // Headers
+  text = text.replace(/^### (.+)$/gm, '<strong style="font-size:13px;color:var(--accent2)">$1</strong>');
+  text = text.replace(/^## (.+)$/gm, '<strong style="font-size:14px;color:var(--accent)">$1</strong>');
+  text = text.replace(/^# (.+)$/gm, '<strong style="font-size:15px;color:var(--accent)">$1</strong>');
+  // Numbered list
+  text = text.replace(/^\d+\. (.+)$/gm, '<li>$1</li>');
+  text = text.replace(/(<li>.*<\/li>\n?)+/g, m => `<ol>${m}</ol>`);
+  // Bullet list
+  text = text.replace(/^[•\-] (.+)$/gm, '<li>$1</li>');
+  // Line breaks
+  text = text.replace(/\n\n/g, '<br><br>');
+  text = text.replace(/\n/g, '<br>');
+  return text;
+}
+
+function escapeHtml(t) {
+  return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+async function sendMessage() {
+  const input = document.getElementById('userInput');
+  const text = input.value.trim();
+  if (!text || isLoading) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+  isLoading = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  // User message
+  appendMsg('user', escapeHtml(text));
+  messages.push({ role: 'user', content: text });
+
+  // Typing indicator
+  const chat = document.getElementById('chat');
+  const typingDiv = document.createElement('div');
+  typingDiv.className = 'msg bot';
+  typingDiv.id = 'typing';
+  typingDiv.innerHTML = `
+    <div class="avatar">🤖</div>
+    <div><div class="bubble"><div class="typing-dots"><span></span><span></span><span></span></div></div></div>`;
+  chat.appendChild(typingDiv);
+  chat.scrollTop = chat.scrollHeight;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        system: SYSTEM_PROMPT,
+        messages: messages
+      })
+    });
+
+    const data = await res.json();
+    typingDiv.remove();
+
+    if (data.content && data.content[0]) {
+      const reply = data.content[0].text;
+      messages.push({ role: 'assistant', content: reply });
+      appendMsg('bot', formatResponse(reply));
+    } else {
+      appendMsg('bot', '⚠️ Không nhận được phản hồi. Vui lòng thử lại.');
+    }
+  } catch (err) {
+    typingDiv.remove();
+    appendMsg('bot', `⚠️ Lỗi kết nối: <code>${err.message}</code><br>Vui lòng kiểm tra kết nối mạng.`);
+  }
+
+  isLoading = false;
+  document.getElementById('sendBtn').disabled = false;
+  input.focus();
+}
+</script>
+</body>
+</html>
