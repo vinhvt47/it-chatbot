@@ -4,6 +4,79 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>IT Assistant – Trợ lý Công nghệ Thông tin</title>
+<meta name="theme-color" content="#0a0e1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="IT Assistant">
+<link rel="manifest" href="manifest.json">
+<style>
+  /* SETUP MODAL */
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.8);
+    backdrop-filter: blur(6px);
+    z-index: 999;
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  }
+  .modal {
+    background: #0f1525;
+    border: 1px solid #1e2d4a;
+    border-radius: 16px;
+    padding: 24px 20px;
+    max-width: 360px; width: 100%;
+    animation: fadeUp 0.3s ease;
+  }
+  .modal h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px;
+    background: linear-gradient(90deg, #00d4ff, #7b61ff);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .modal p { font-size: 12px; color: #5a7090; line-height: 1.6; margin-bottom: 16px; }
+  .modal input {
+    width: 100%; background: #0a0e1a; border: 1px solid #1e2d4a;
+    border-radius: 8px; padding: 10px 12px; color: #e2eaf5;
+    font-size: 12px; font-family: 'JetBrains Mono', monospace;
+    outline: none; margin-bottom: 12px;
+  }
+  .modal input:focus { border-color: rgba(0,212,255,0.4); }
+  .modal-btns { display: flex; gap: 8px; }
+  .btn-save {
+    flex: 1; background: linear-gradient(135deg, #00d4ff, #7b61ff);
+    border: none; border-radius: 8px; padding: 10px;
+    color: #fff; font-weight: 600; font-size: 13px;
+    cursor: pointer; font-family: 'Sora', sans-serif;
+  }
+  .btn-help {
+    background: #151d30; border: 1px solid #1e2d4a;
+    border-radius: 8px; padding: 10px 14px;
+    color: #5a7090; font-size: 12px;
+    cursor: pointer; font-family: 'Sora', sans-serif;
+    white-space: nowrap;
+  }
+  .step-list { list-style: none; counter-reset: s; margin-bottom: 16px; }
+  .step-list li { counter-increment: s; display: flex; gap: 10px; align-items: flex-start;
+    font-size: 12px; color: #a0b4c8; margin-bottom: 10px; line-height: 1.5; }
+  .step-list li::before {
+    content: counter(s); min-width: 20px; height: 20px;
+    background: rgba(0,212,255,0.15); border: 1px solid rgba(0,212,255,0.3);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 10px; color: #00d4ff; font-weight: 700; margin-top: 1px;
+  }
+  .step-list li a { color: #00d4ff; }
+  .code-box {
+    background: #060b14; border: 1px solid #1e2d4a; border-radius: 6px;
+    padding: 8px 10px; font-family: 'JetBrains Mono', monospace;
+    font-size: 10px; color: #a8d8ea; overflow-x: auto;
+    margin: 6px 0; white-space: pre;
+  }
+  .back-btn { background: none; border: none; color: #5a7090; font-size: 12px;
+    cursor: pointer; font-family: 'Sora', sans-serif; margin-bottom: 12px; padding: 0; }
+  .back-btn:hover { color: #00d4ff; }
+  .proxy-tag {
+    font-size: 10px; color: #5a7090; text-align: center; margin-top: 8px;
+  }
+  .proxy-tag span { color: #00d4ff; cursor: pointer; }
+  .proxy-tag span:hover { text-decoration: underline; }
+</style>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Sora:wght@300;400;600;700&display=swap');
 
@@ -348,7 +421,9 @@
     <p><span class="status-dot"></span>Trực tuyến · Powered by Claude AI</p>
   </div>
   <button class="clear-btn" onclick="clearChat()">🗑 Xóa chat</button>
+  <button id="installBtn" class="clear-btn" style="display:none;border-color:var(--accent);color:var(--accent)">📲 Cài app</button>
 </header>
+<div style="background:var(--panel);border-bottom:1px solid var(--border);padding:5px 20px;font-size:10px;text-align:center" id="proxyStatus"></div>
 
 <!-- QUICK TOPICS -->
 <div class="topics-bar">
@@ -399,7 +474,64 @@
   <div class="input-hint">Enter để gửi · Shift+Enter xuống dòng · Powered by Claude claude-sonnet-4-20250514</div>
 </div>
 
+<!-- SETUP MODAL -->
+<div class="modal-overlay" id="setupModal" style="display:none">
+  <div class="modal" id="modalContent">
+    <div id="view-main">
+      <h3>⚙️ Cấu hình Proxy URL</h3>
+      <p>Để chatbot hoạt động, bạn cần tạo Cloudflare Worker proxy miễn phí. Dán URL sau khi tạo xong:</p>
+      <input type="url" id="proxyInput" placeholder="https://anthropic-proxy.xxx.workers.dev" />
+      <div class="modal-btns">
+        <button class="btn-save" onclick="saveProxy()">💾 Lưu & Kết nối</button>
+        <button class="btn-help" onclick="showHelp()">📖 Hướng dẫn</button>
+      </div>
+    </div>
+    <div id="view-help" style="display:none">
+      <button class="back-btn" onclick="showMain()">← Quay lại</button>
+      <h3>📖 Tạo Cloudflare Worker</h3>
+      <ol class="step-list">
+        <li>Vào <a href="https://workers.cloudflare.com" target="_blank">workers.cloudflare.com</a> → Đăng ký miễn phí</li>
+        <li>Dashboard → <strong>Workers &amp; Pages → Create → Hello World</strong> → Đặt tên <em>anthropic-proxy</em> → Deploy</li>
+        <li>Nhấn <strong>Edit code</strong>, xóa hết, dán code này:
+          <div class="code-box">export default {
+  async fetch(request) {
+    if (request.method==="OPTIONS")
+      return new Response(null,{headers:{
+        "Access-Control-Allow-Origin":"*",
+        "Access-Control-Allow-Methods":"POST,OPTIONS",
+        "Access-Control-Allow-Headers":"Content-Type",
+      }});
+    const body = await request.json();
+    const r = await fetch(
+      "https://api.anthropic.com/v1/messages",{
+      method:"POST",
+      headers:{
+        "Content-Type":"application/json",
+        "x-api-key":"API_KEY_CUA_BAN",
+        "anthropic-version":"2023-06-01",
+      },
+      body:JSON.stringify(body),
+    });
+    const d = await r.json();
+    return new Response(JSON.stringify(d),{
+      headers:{"Content-Type":"application/json",
+        "Access-Control-Allow-Origin":"*"},
+    });
+  }
+};</div>
+        </li>
+        <li>Thay <strong>API_KEY_CUA_BAN</strong> bằng key tại <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></li>
+        <li>Nhấn <strong>Deploy</strong> → copy URL → dán vào ô bên trên</li>
+      </ol>
+    </div>
+  </div>
+</div>
+
 <script>
+// ===== CẤU HÌNH PROXY =====
+// Sau khi tạo Cloudflare Worker, dán URL vào đây:
+let PROXY_URL = localStorage.getItem('proxy_url') || '';
+
 const SYSTEM_PROMPT = `Bạn là IT Assistant Pro – trợ lý chuyên gia công nghệ thông tin cao cấp cho kỹ sư Võ Tiến Vĩnh, người làm việc trong lĩnh vực viễn thông và hạ tầng mạng tại Việt Nam.
 
 Phong cách trả lời:
@@ -540,7 +672,8 @@ async function sendMessage() {
   chat.scrollTop = chat.scrollHeight;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    if (!PROXY_URL) { showSetup(); typingDiv.remove(); isLoading=false; document.getElementById('sendBtn').disabled=false; return; }
+    const res = await fetch(PROXY_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -570,6 +703,36 @@ async function sendMessage() {
   document.getElementById('sendBtn').disabled = false;
   input.focus();
 }
+
+function showSetup() { document.getElementById('setupModal').style.display='flex'; showMain(); }
+function showMain() { document.getElementById('view-main').style.display=''; document.getElementById('view-help').style.display='none'; if(PROXY_URL) document.getElementById('proxyInput').value=PROXY_URL; }
+function showHelp() { document.getElementById('view-main').style.display='none'; document.getElementById('view-help').style.display=''; }
+function saveProxy() {
+  const v = document.getElementById('proxyInput').value.trim();
+  if (!v.startsWith('http')) { alert('URL không hợp lệ! Phải bắt đầu bằng https://'); return; }
+  PROXY_URL = v;
+  localStorage.setItem('proxy_url', v);
+  document.getElementById('setupModal').style.display='none';
+  updateProxyStatus();
+  appendMsg('bot', '✅ <strong>Kết nối thành công!</strong> Proxy đã được lưu. Hãy thử hỏi câu đầu tiên!');
+}
+function updateProxyStatus() {
+  const el = document.getElementById('proxyStatus');
+  if (!el) return;
+  if (PROXY_URL) {
+    el.innerHTML = `<span style="color:var(--green)">● Proxy: đã kết nối</span> · <span style="color:var(--accent);cursor:pointer" onclick="showSetup()">Đổi URL</span>`;
+  } else {
+    el.innerHTML = `<span style="color:var(--red)">● Chưa cấu hình</span> · <span style="color:var(--accent);cursor:pointer" onclick="showSetup()">Cấu hình ngay</span>`;
+  }
+}
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault(); deferredPrompt = e;
+  const btn = document.getElementById('installBtn');
+  if (btn) { btn.style.display='flex'; btn.onclick = () => { deferredPrompt.prompt(); deferredPrompt.userChoice.then(()=>{btn.style.display='none';}); }; }
+});
+window.onload = () => { updateProxyStatus(); if(!PROXY_URL) setTimeout(showSetup, 600); };
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 </script>
 </body>
 </html>
